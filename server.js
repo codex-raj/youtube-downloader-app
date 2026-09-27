@@ -3,6 +3,7 @@ const cors = require('cors');
 const { exec } = require('child_process');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 const app = express();
 
 app.use(cors());
@@ -22,10 +23,20 @@ app.get('/download', (req, res) => {
   if (!url) return res.status(400).send('No URL provided');
 
   console.log(`Downloading: ${url}`);
-  
+
   const outputPath = path.join(downloadDir, '%(title)s.%(ext)s');
-  // Use the local yt-dlp binary downloaded by the build script
-  const command = `./yt-dlp --js-runtime node -o "${outputPath}" "${url}"`;
+
+  // Write cookies to a temp file if provided via env var
+  const cookiesPath = path.join(os.tmpdir(), 'cookies.txt');
+  if (process.env.COOKIES) {
+    fs.writeFileSync(cookiesPath, process.env.COOKIES);
+  }
+
+  const cookiesFlag = fs.existsSync(cookiesPath)
+    ? `--cookies "${cookiesPath}"`
+    : '';
+
+  const command = `./yt-dlp --js-runtime node ${cookiesFlag} -o "${outputPath}" "${url}"`;
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
