@@ -11,7 +11,7 @@ app.use(cors());
 // Serve static files from the current directory
 app.use(express.static(path.join(__dirname)));
 
-const downloadDir = path.join(os.homedir(), 'Downloads');
+const downloadDir = path.join(os.tmpdir()); // Use temp folder for cloud hosting
 
 // Root route to ensure we serve index.html
 app.get('/', (req, res) => {
@@ -23,9 +23,9 @@ app.get('/download', (req, res) => {
   if (!url) return res.status(400).send('No URL provided');
 
   console.log(`Downloading: ${url}`);
-
-  const outputPath = path.join(downloadDir, '%(title)s.%(ext)s');
-
+  
+  const outputPath = path.join(downloadDir, 'video.mp4');
+  
   // Write cookies to a temp file if provided via env var
   const cookiesPath = path.join(os.tmpdir(), 'cookies.txt');
   if (process.env.COOKIES) {
@@ -44,25 +44,19 @@ app.get('/download', (req, res) => {
       return res.status(500).send('Download failed: ' + error.message);
     }
 
-    // Find the downloaded file (yt-dlp may add extension like .mp4)
-    const files = fs.readdirSync(downloadDir)
-      .filter(f => fs.statSync(path.join(downloadDir, f)).mtime > new Date(Date.now() - 10000)
-      && f !== 'cookies.txt');
-
-    if (files.length === 0) {
-      return res.status(500).send('File not found after download');
+    if (fs.existsSync(outputPath)) {
+      res.setHeader('Content-Disposition', 'attachment; filename="video.mp4"');
+      res.download(outputPath, 'video.mp4', (err) => {
+        if (err) console.error('Send error:', err);
+        try { fs.unlinkSync(outputPath); } catch (e) {}
+      });
+    } else {
+      res.status(500).send('File not found after download');
     }
-
-    const filePath = path.join(downloadDir, files[0]);
-    res.download(filePath, (err) => {
-      if (err) console.error('Send error:', err);
-      // Clean up temp file
-      try { fs.unlinkSync(filePath); } catch (e) {}
-    });
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`App running at http://localhost:${PORT}`);
+  console.log(`App running on port ${PORT}`);
 });

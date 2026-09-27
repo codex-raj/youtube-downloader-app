@@ -110,11 +110,18 @@ function downloadVideo() {
     showMsg('Paste a valid YouTube link first', true);
     return;
   }
-  showMsg('Sending download request to cloud server...');
-  fetch(`https://youtube-downloader-app-mrdd.onrender.com/download?url=${encodeURIComponent(url)}`)
-    .then(res => res.text())
-    .then(msg => showMsg(msg))
-    .catch(err => showMsg('Error: Backend unreachable', true));
+
+  showMsg('Downloading... wait for the popup...');
+
+  const downloadUrl = `https://youtube-downloader-app-mrdd.onrender.com/download?url=${encodeURIComponent(url)}`;
+
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  showMsg('Download started! Check your browser bar.');
 }
 
 const sidebar = document.querySelector('.sidebar');
