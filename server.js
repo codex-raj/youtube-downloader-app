@@ -43,7 +43,22 @@ app.get('/download', (req, res) => {
       console.error(`Error: ${error.message}`);
       return res.status(500).send('Download failed: ' + error.message);
     }
-    res.send('Download completed to your Downloads folder!');
+
+    // Find the downloaded file (yt-dlp may add extension like .mp4)
+    const files = fs.readdirSync(downloadDir)
+      .filter(f => fs.statSync(path.join(downloadDir, f)).mtime > new Date(Date.now() - 10000)
+      && f !== 'cookies.txt');
+
+    if (files.length === 0) {
+      return res.status(500).send('File not found after download');
+    }
+
+    const filePath = path.join(downloadDir, files[0]);
+    res.download(filePath, (err) => {
+      if (err) console.error('Send error:', err);
+      // Clean up temp file
+      try { fs.unlinkSync(filePath); } catch (e) {}
+    });
   });
 });
 
