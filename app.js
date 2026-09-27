@@ -110,8 +110,8 @@ function downloadVideo() {
     showMsg('Paste a valid YouTube link first', true);
     return;
   }
-  showMsg('Downloading... check your terminal for progress');
-  fetch(`/download?url=${encodeURIComponent(url)}`)
+  showMsg('Sending download request to cloud server...');
+  fetch(`https://youtube-downloader-app-mrdd.onrender.com/download?url=${encodeURIComponent(url)}`)
     .then(res => res.text())
     .then(msg => showMsg(msg))
     .catch(err => showMsg('Error: Backend unreachable', true));
